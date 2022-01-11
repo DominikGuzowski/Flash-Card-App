@@ -1,7 +1,150 @@
-:where(*, *::before, *::after) {
+@import url("https://fonts.googleapis.com/css2?family=Merriweather+Sans:ital,wght@0,300;0,400;0,600;0,800;1,300;1,400;1,600;1,800&family=Open+Sans:wght@800&display=swap");
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
+*::before,
+*::after {
+    content: "";
+}
+:root {
+    --flash-card-clr-light: #255996;
+    --flash-card-clr-dark: #1b3049;
+
+    --font-light: 300 1em "Merriweather Sans", sans-serif;
+    --font-normal: 400 1em "Segoe UI", sans-serif;
+    --font-bold: 600 1em "Merriweather Sans", sans-serif;
+    --font-extra-bold: 800 1em "Merriweather Sans", sans-serif;
+    --font-black: 900 1.5em "Segoe UI", sans-serif;
+}
+body {
+    font-family: "Merriweather Sans", "Open Sans" sans-serif;
+    background-color: #171f29;
+}
+/* 
+.light {
+    font: var(--font-light);
+}
+
+.normal {
+    font: var(--font-normal);
+}
+
+.bold {
+    font: var(--font-bold);
+}
+
+.extra-bold {
+    font: var(--font-extra-bold);
+}
+
+.black {
+    font: var(--font-black);
+} */
 .main {
     display: flex;
+    min-height: 100vh;
+    align-items: center;
+    flex-direction: column;
+    padding: 2rem;
+    gap: 1rem;
+}
+/* #255996 */
+/* #1b3049 */
+/* Flash Card Styling */
+
+.flash-card {
+    width: min(30em, 75vw);
+    background-color: transparent;
+    perspective: 50rem;
+    transform-style: preserve-3d;
+    transition: all 500ms ease-in-out;
+    /* IMPORTANT: Set height with js based on the max clientHeight of either front and back. */
+}
+
+.flash-card__content {
+    text-align: center;
+    position: relative;
+    transition: transform 0.75s ease-in-out;
+    transform-style: preserve-3d;
+    user-select: none;
+    cursor: pointer;
+    transition-duration: center center;
+}
+
+.flash-card.flash-card--front-visible .flash-card__content {
+    transform: rotateY(0turn);
+}
+
+.flash-card.flash-card--back-visible .flash-card__content {
+    transform: rotate3d(1, 1, 0, 0.5turn) rotateZ(-0.25turn);
+}
+
+.flash-card__front,
+.flash-card__back {
+    opacity: 1;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    min-height: fit-content;
+    padding: 1em;
+    color: white;
+}
+
+.flash-card__front {
+    background-color: var(--flash-card-clr-light);
+}
+.flash-card__back {
+    background-color: var(--flash-card-clr-dark);
+    transform: rotateY(-0.5turn);
+}
+
+.flash-card__heading {
+    font: var(--font-black);
+    letter-spacing: 1px;
+    margin: 0;
+    /* text-transform: uppercase; */
+    transform-style: preserve-3d;
+    padding: 0;
+    width: 90%;
+}
+
+.flash-card__heading::before {
+    position: absolute;
+    inset: -0.5rem 0;
+    top: -0.4rem;
+    margin-bottom: auto;
+    padding: 0;
+    border: 0.025rem currentColor solid;
+    border-left: none;
+    border-top: none;
+    border-right: none;
+    z-index: -1;
+}
+
+.flash-card__text {
+    font: var(--font-normal);
+    opacity: 0.75;
+    margin-top: 2rem;
+    max-height: 10rem;
+    padding: 0.25rem 0.5rem;
+    position: relative;
+}
+
+.flash-card__subheading {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    font: var(--font-bold);
+    font-size: 75%;
+    text-transform: uppercase;
 }
