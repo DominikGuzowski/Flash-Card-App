@@ -11,7 +11,10 @@ function App() {
     const getSubHeading = (title) => {
         let headings = title.split(".");
         headings.pop();
-        return headings.map((x) => x.replace(/([a-z0-9])([A-Z])/g, "$1 $2")).join(" • ");
+        return headings
+            .filter((x) => x !== "__notopic__")
+            .map((x) => x.replace(/([a-z0-9])([A-Z])/g, "$1 $2"))
+            .join(" • ");
     };
 
     const getMainHeading = (title) => {
@@ -75,6 +78,7 @@ function App() {
                 frontText={data && data[currentTopic].cards[currentCard].question}
                 backText={data && data[currentTopic].cards[currentCard].answer}
             /> */}
+            <pre>{JSON.stringify(data, null, 2)}</pre>
             {data?.map((section) => {
                 return section.cards.map((card) => {
                     return (

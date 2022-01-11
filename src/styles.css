@@ -61,7 +61,7 @@ body {
     perspective: 50rem;
     transform-style: preserve-3d;
     transition: all 500ms ease-in-out;
-    /* IMPORTANT: Set height with js based on the max clientHeight of either front and back. */
+    /* IMPORTANT: Set height with js based on the max clientHeight of either __front and __back. */
 }
 
 .flash-card__content {
@@ -96,6 +96,7 @@ body {
     min-height: fit-content;
     padding: 1em;
     color: white;
+    box-shadow: 0.25rem 0.25rem 0.1rem #0002;
 }
 
 .flash-card__front {
@@ -110,36 +111,28 @@ body {
     font: var(--font-black);
     letter-spacing: 1px;
     margin: 0;
-    /* text-transform: uppercase; */
     transform-style: preserve-3d;
     padding: 0;
+    padding-bottom: 0.75rem;
     width: 90%;
-}
-
-.flash-card__heading::before {
-    position: absolute;
-    inset: -0.5rem 0;
-    top: -0.4rem;
-    margin-bottom: auto;
-    padding: 0;
-    border: 0.025rem currentColor solid;
-    border-left: none;
-    border-top: none;
-    border-right: none;
-    z-index: -1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: wrap;
+    border-bottom: 0.025rem currentColor solid;
 }
 
 .flash-card__text {
     font: var(--font-normal);
     opacity: 0.75;
-    margin-top: 2rem;
-    max-height: 10rem;
+    margin-top: 1rem;
+    /* max-height: 10rem; */
     padding: 0.25rem 0.5rem;
     position: relative;
 }
 
 .flash-card__subheading {
     text-align: center;
+    width: 100%;
     margin-top: 0;
     margin-bottom: 0;
     padding-top: 0;
@@ -147,4 +140,7 @@ body {
     font: var(--font-bold);
     font-size: 75%;
     text-transform: uppercase;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
