@@ -1,3 +1,4 @@
+import sha256 from "sha256";
 const fileInput = document.getElementById("fsc-file");
 
 /*
@@ -38,7 +39,7 @@ export const readFlashCardFiles = (files, result) => {
         result?.({});
         return;
     }
-
+    id = 0;
     let accumulator = {};
     const fileCount = files.length;
     let currentCount = 0;
@@ -61,7 +62,7 @@ export const readFlashCardFile = (FILE, result) => {
     };
     fileReader.readAsText(FILE);
 };
-
+var id = 0;
 export const parseFlashCard = (flashCard) => {
     let result = [];
     const content = flashCard.replaceAll("\r", "");
@@ -73,7 +74,7 @@ export const parseFlashCard = (flashCard) => {
         line = clearLeadingWhiteSpace(line);
         if (line.length === 0) continue;
 
-        console.log(matchMode(line));
+        // console.log(matchMode(line));
         let redo = true;
         while (redo) {
             // console.log("DOING", line);
@@ -132,9 +133,7 @@ export const parseFlashCard = (flashCard) => {
                 case 5: {
                     currentTopic = handleInlineQuestion(currentTopic, inlineQuestion);
                     // console.log(inlineQuestion);
-                    line = line.substring(
-                        line.indexOf(inlineQuestion[0]) + inlineQuestion[0].length
-                    );
+                    line = line.substring(line.indexOf(inlineQuestion[0]) + inlineQuestion[0].length);
                     const { inlineAnswer: a1, inlineAnswerStart: a2 } = regexMatch(line);
                     // console.log(line, a1, a2);
                     if (a1 || a2) redo = true;
@@ -143,18 +142,12 @@ export const parseFlashCard = (flashCard) => {
                     break;
                 }
                 case 6: {
-                    currentTopic = handleInlineQuestionStart(
-                        currentTopic,
-                        line,
-                        inlineQuestionStart
-                    );
+                    currentTopic = handleInlineQuestionStart(currentTopic, line, inlineQuestionStart);
                     break;
                 }
                 case 7: {
                     currentTopic = handleInlineQuestionEnd(currentTopic, inlineQuestionEnd);
-                    line = line.substring(
-                        line.indexOf(inlineQuestionEnd[0]) + inlineQuestionEnd[0].length
-                    );
+                    line = line.substring(line.indexOf(inlineQuestionEnd[0]) + inlineQuestionEnd[0].length);
                     const { inlineAnswer: a1, inlineAnswerStart: a2 } = regexMatch(line);
                     if (a1 || a2) redo = true;
                     else state = 0;
@@ -162,9 +155,7 @@ export const parseFlashCard = (flashCard) => {
                 }
                 case 8: {
                     currentTopic = handleInlineAnswer(currentTopic, inlineAnswer);
-                    line = line.substring(
-                        line.indexOf(inlineAnswer[0]) + inlineAnswer[0].length
-                    );
+                    line = line.substring(line.indexOf(inlineAnswer[0]) + inlineAnswer[0].length);
                     const { inlineQuestion: a1, inlineQuestionStart: a2 } = regexMatch(line);
                     if (a1 || a2) redo = true;
                     else state = 0;
@@ -172,18 +163,12 @@ export const parseFlashCard = (flashCard) => {
                     break;
                 }
                 case 9: {
-                    currentTopic = handleInlineAnswerStart(
-                        currentTopic,
-                        line,
-                        inlineAnswerStart
-                    );
+                    currentTopic = handleInlineAnswerStart(currentTopic, line, inlineAnswerStart);
                     break;
                 }
                 case 10: {
                     currentTopic = handleInlineAnswerEnd(currentTopic, inlineAnswerEnd);
-                    line = line.substring(
-                        line.indexOf(inlineAnswerEnd[0]) + inlineAnswerEnd[0].length
-                    );
+                    line = line.substring(line.indexOf(inlineAnswerEnd[0]) + inlineAnswerEnd[0].length);
                     const { inlineQuestion: a1, inlineQuestionStart: a2 } = regexMatch(line);
                     if (a1 || a2) redo = true;
                     else state = 0;
@@ -196,11 +181,10 @@ export const parseFlashCard = (flashCard) => {
             // console.log(currentTopic?.cards[currentTopic.cards.length - 1]);
         }
     }
-    console.log(clearTrailingWhiteSpace("HELLO"));
-
     if (currentTopic) result.push(currentTopic);
     return cleanResults(mergeResults(result));
 };
+
 const handleInlineAnswer = (currentTopic, answer) => {
     const formattedAnswer = answer[0].replaceAll(/@![ \t]*/g, "").replaceAll(/[ \t]*!@/g, "");
     if (
@@ -211,6 +195,7 @@ const handleInlineAnswer = (currentTopic, answer) => {
     }
     return currentTopic;
 };
+
 const handleInlineAnswerStart = (currentTopic, line, answer) => {
     if (answer) {
         const formattedAnswer = answer[0].replaceAll(/@![ \t]*/g, "");
@@ -235,6 +220,7 @@ const handleInlineAnswerStart = (currentTopic, line, answer) => {
     }
     return currentTopic;
 };
+
 const handleInlineAnswerEnd = (currentTopic, answer) => {
     const formattedAnswer = answer[0].replace(/[ \t]*!@/g, "");
     const currentAnswer = currentTopic.cards[currentTopic.cards.length - 1].answer;
@@ -252,8 +238,18 @@ const handleInlineAnswerEnd = (currentTopic, answer) => {
     }
     return currentTopic;
 };
+
 const handleInlineQuestionEnd = (currentTopic, question) => {
-    const formattedQuestion = question[0].replace(/[ \t]*!\$/g, "");
+    if (
+        currentTopic.cards.length > 0 &&
+        currentTopic.cards[currentTopic.cards.length - 1].answer &&
+        currentTopic.cards[currentTopic.cards.length - 1].question
+    ) {
+        currentTopic.cards[currentTopic.cards.length - 1].id = sha256(
+            JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
+        );
+    }
+    const formattedQuestion = clearLeadingWhiteSpace(question[0].replace(/[ \t]*!\$/g, ""));
     const currentQuestion = currentTopic.cards[currentTopic.cards.length - 1].question;
     const endSpace = currentQuestion.match(/.*[ \t]$/);
     const updatedQuestion = endSpace
@@ -263,10 +259,23 @@ const handleInlineQuestionEnd = (currentTopic, question) => {
     currentTopic.cards[currentTopic.cards.length - 1].question = updatedQuestion;
     return currentTopic;
 };
+
 const handleInlineQuestionStart = (currentTopic, line, question) => {
+    if (
+        currentTopic.cards.length > 0 &&
+        currentTopic.cards[currentTopic.cards.length - 1].answer &&
+        currentTopic.cards[currentTopic.cards.length - 1].question
+    ) {
+        currentTopic.cards[currentTopic.cards.length - 1].id = sha256(
+            JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
+        );
+    }
     if (question) {
-        const formattedQuestion = question[0].replaceAll(/\$![ \t]*/g, "");
-        currentTopic.cards.push({ question: formattedQuestion });
+        const formattedQuestion = clearLeadingWhiteSpace(question[0].replaceAll(/\$![ \t]*/g, ""));
+        currentTopic.cards.push({
+            question: formattedQuestion,
+            topic: currentTopic.topic,
+        });
     } else {
         const currentQuestion = currentTopic.cards[currentTopic.cards.length - 1].question;
         const endSpace = currentQuestion.match(/.*[ \t]$/);
@@ -277,13 +286,27 @@ const handleInlineQuestionStart = (currentTopic, line, question) => {
     }
     return currentTopic;
 };
+
 const handleInlineQuestion = (currentTopic, question) => {
-    const formattedQuestion = question[0]
-        .replaceAll(/\$![ \t]*/g, "")
-        .replaceAll(/[ \t]*!\$/g, "");
-    currentTopic.cards.push({ question: formattedQuestion });
+    const formattedQuestion = clearLeadingWhiteSpace(
+        question[0].replaceAll(/\$![ \t]*/g, "").replaceAll(/[ \t]*!\$/g, "")
+    );
+    if (
+        currentTopic.cards.length > 0 &&
+        currentTopic.cards[currentTopic.cards.length - 1].answer &&
+        currentTopic.cards[currentTopic.cards.length - 1].question
+    ) {
+        currentTopic.cards[currentTopic.cards.length - 1].id = sha256(
+            JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
+        );
+    }
+    currentTopic.cards.push({
+        question: formattedQuestion,
+        topic: currentTopic.topic,
+    });
     return currentTopic;
 };
+
 const handleQuestion = (currentTopic, line) => {
     if (!currentTopic) {
         currentTopic = {
@@ -292,31 +315,30 @@ const handleQuestion = (currentTopic, line) => {
         };
     }
     if (line.startsWith("$$")) {
-        let l = line.replace(FLASH_CARD_QUESTION_REGEX, "");
-        if (currentTopic.cards.length === 0) currentTopic.cards.push({ question: l });
-        else if (
+        let l = clearLeadingWhiteSpace(line.replace(FLASH_CARD_QUESTION_REGEX, ""));
+        if (currentTopic.cards.length === 0) {
+            currentTopic.cards.push({ question: l, topic: currentTopic.topic });
+        } else if (
             currentTopic.cards[currentTopic.cards.length - 1].answer &&
             currentTopic.cards[currentTopic.cards.length - 1].question
         ) {
-            currentTopic.cards.push({ question: l });
+            currentTopic.cards[currentTopic.cards.length - 1].id = sha256(
+                JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
+            );
+            currentTopic.cards.push({ question: l, topic: currentTopic.topic });
         } else {
             let q = currentTopic.cards[currentTopic.cards.length - 1].question;
-            let ln =
-                q.charAt(q.length - 1) !== " "
-                    ? " " + clearLeadingWhiteSpace(l)
-                    : clearLeadingWhiteSpace(l);
+            let ln = q.charAt(q.length - 1) !== " " ? " " + clearLeadingWhiteSpace(l) : clearLeadingWhiteSpace(l);
             currentTopic.cards[currentTopic.cards.length - 1].question += ln;
         }
     } else {
         let q = currentTopic.cards[currentTopic.cards.length - 1].question;
-        let ln =
-            q.charAt(q.length - 1) !== " "
-                ? " " + clearLeadingWhiteSpace(line)
-                : clearLeadingWhiteSpace(line);
+        let ln = q.charAt(q.length - 1) !== " " ? " " + clearLeadingWhiteSpace(line) : clearLeadingWhiteSpace(line);
         currentTopic.cards[currentTopic.cards.length - 1].question += ln;
     }
     return currentTopic;
 };
+
 const handleAnswer = (currentTopic, line) => {
     if (!currentTopic) {
         currentTopic = {
@@ -325,31 +347,35 @@ const handleAnswer = (currentTopic, line) => {
         };
     }
     if (line.startsWith("@@")) {
-        let l = line.replace(FLASH_CARD_ANSWER_REGEX, "");
+        let l = clearLeadingWhiteSpace(line.replace(FLASH_CARD_ANSWER_REGEX, ""));
         if (currentTopic.cards[currentTopic.cards.length - 1]) {
             if (currentTopic.cards[currentTopic.cards.length - 1].answer !== undefined) {
                 let a = currentTopic.cards[currentTopic.cards.length - 1].answer;
-                let ln =
-                    a.charAt(a.length - 1) !== " "
-                        ? " " + clearLeadingWhiteSpace(l)
-                        : clearLeadingWhiteSpace(l);
+                let ln = a.charAt(a.length - 1) !== " " ? " " + clearLeadingWhiteSpace(l) : clearLeadingWhiteSpace(l);
                 currentTopic.cards[currentTopic.cards.length - 1].answer += ln;
             } else currentTopic.cards[currentTopic.cards.length - 1].answer = l;
         }
     } else {
         if (currentTopic.cards[currentTopic.cards.length - 1]) {
             let a = currentTopic.cards[currentTopic.cards.length - 1].answer;
-            let ln =
-                a.charAt(a.length - 1) !== " "
-                    ? " " + clearLeadingWhiteSpace(line)
-                    : clearLeadingWhiteSpace(line);
+            let ln = a.charAt(a.length - 1) !== " " ? " " + clearLeadingWhiteSpace(line) : clearLeadingWhiteSpace(line);
             currentTopic.cards[currentTopic.cards.length - 1].answer += ln;
         }
     }
     return currentTopic;
 };
+
 const handleTopic = (currentTopic, topic, result) => {
     if (currentTopic) {
+        if (
+            currentTopic.cards.length > 0 &&
+            currentTopic.cards[currentTopic.cards.length - 1].answer &&
+            currentTopic.cards[currentTopic.cards.length - 1].question
+        ) {
+            currentTopic.cards[currentTopic.cards.length - 1].id = sha256(
+                JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
+            );
+        }
         result.push(currentTopic);
     }
 
@@ -390,8 +416,18 @@ const handleTopic = (currentTopic, topic, result) => {
     };
     return currentTopic;
 };
+
 const handleMarkdownTopic = (currentTopic, topic, line, result) => {
     if (currentTopic) {
+        if (
+            currentTopic.cards.length > 0 &&
+            currentTopic.cards[currentTopic.cards.length - 1].answer &&
+            currentTopic.cards[currentTopic.cards.length - 1].question
+        ) {
+            currentTopic.cards[currentTopic.cards.length - 1].id = sha256(
+                JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
+            );
+        }
         result.push(currentTopic);
     }
     let recentMostTopic = (currentTopic?.topic || "").split(".");
@@ -426,23 +462,32 @@ const handleMarkdownTopic = (currentTopic, topic, line, result) => {
     }
     return currentTopic;
 };
+
 const mergeResults = (obj) => {
     let combined = {};
     for (let section of obj) {
         if (!combined[section.topic])
-            combined[section.topic] = section.cards.filter(
-                ({ question, answer }) => question && answer
-            );
+            combined[section.topic] = section.cards.filter(({ question, answer }) => question && answer);
         else
             combined[section.topic] = [
                 ...combined[section.topic],
                 ...section.cards.filter(({ question, answer }) => question && answer),
             ];
     }
+    for (let topic of Object.keys(combined)) {
+        for (let i = 0; i < combined[topic].length; i++) {
+            combined[topic][i].question = clearLeadingWhiteSpace(combined[topic][i].question);
+            combined[topic][i].topic = clearLeadingWhiteSpace(combined[topic][i].topic);
+            combined[topic][i].answer = clearLeadingWhiteSpace(combined[topic][i].answer);
+            combined[topic][i].question = clearTrailingWhiteSpace(combined[topic][i].question);
+            combined[topic][i].topic = clearTrailingWhiteSpace(combined[topic][i].topic);
+            combined[topic][i].answer = clearTrailingWhiteSpace(combined[topic][i].answer);
+        }
+    }
     return Object.entries(combined).map(([k, v]) => ({ topic: k, cards: v }));
 };
 
-const FLASH_CARD_FILE_EXTENSION = ".flshcrd";
+const FLASH_CARD_FILE_EXTENSION = ".md";
 const FLASH_CARD_TOPIC_REGEX = /^[ \t]*\[.+\]/;
 const FLASH_CARD_QUESTION_REGEX = /^[ \t]*\$\$/;
 const FLASH_CARD_ANSWER_REGEX = /^[ \t]*@@/;
@@ -483,11 +528,7 @@ const jsonToFlashCard = (json) => {
             for (let { question, answer } of cards) {
                 flashCardString += "## [" + topic + "] Flash Card No.: " + counter++ + "\n";
                 flashCardString +=
-                    "?? " +
-                    clearLeadingWhiteSpace(question) +
-                    "\n>> " +
-                    clearLeadingWhiteSpace(answer) +
-                    "\n\n";
+                    "?? " + clearLeadingWhiteSpace(question) + "\n>> " + clearLeadingWhiteSpace(answer) + "\n\n";
             }
         }
         flashCardString += "## End: " + file + "\n\n";
@@ -505,8 +546,7 @@ const simpleRegexMatch = (startSymbol, endSymbol, string, options = {}) => {
     const end = string.indexOf(endSymbol, start);
     if (end === -1) return string.substring(start);
     console.log(end, string.length - 1 - mustEndAt + (endSymbol.length - 1));
-    if (mustEndAt !== null && end !== string.length - 1 - mustEndAt + (endSymbol.length - 1))
-        return null;
+    if (mustEndAt !== null && end !== string.length - 1 - mustEndAt + (endSymbol.length - 1)) return null;
     return string.substring(start, end + endSymbol.length);
 };
 
@@ -547,7 +587,6 @@ const matchMode = (line) => ({
     }),
 });
 
-const clearTrailingWhiteSpace = (string) =>
-    reverseString(clearLeadingWhiteSpace(reverseString(string)));
+const clearTrailingWhiteSpace = (string) => reverseString(clearLeadingWhiteSpace(reverseString(string)));
 
 const reverseString = (str) => str.split("").reverse().join("");

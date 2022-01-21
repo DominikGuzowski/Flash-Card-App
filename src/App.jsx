@@ -2,7 +2,20 @@ import React, { useState } from "react";
 import "./styles.css";
 import { FlashCard } from "./components/FlashCard";
 import * as Parser from "./js/FlashCardParser";
+import GDriveLogin from "./components/GDriveLogin";
+import * as api from "./js/GoogleDriveAPI";
+import { FlashCardViewer } from "./components/FlashCardViewer";
+import { Navigation } from "./components/Navigation";
+import { DifficultyRating } from "./components/DifficultyRating";
+import { FileUpload } from "./components/FileUpload";
+import { FileDownload } from "./components/FileDownload";
 
+const pages = [
+    { name: "Home", link: "home" },
+    { name: "Flash Cards", link: "flash-cards" },
+    { name: "Preferences", link: "user-preferences" },
+    { name: "Upload Notes", link: "upload-notes" },
+];
 function App() {
     const [data, setData] = useState(null);
     const [currentTopic, setCurrentTopic] = useState(0);
@@ -23,75 +36,50 @@ function App() {
             .pop()
             .replace(/([a-z0-9])([A-Z])/g, "$1 $2");
     };
+    // let a = 1;
+    // if (a === 1) {
+    //     return (
+    //         <div className='main'>
+    //             <DifficultyRating onClick={(e) => console.log(e)} />
+    //         </div>
+    //     );
+    // } else
     return (
         <div className='main'>
-            <input
-                type='file'
-                multiple
+            <Navigation pages={pages} />
+            <GDriveLogin />
+            <button
+                onClick={() => {
+                    api.getFolderNames().then(({ data, error }) => {
+                        if (error) console.log(error);
+                        else console.log(data);
+                    });
+                    console.log(api.getAccessToken());
+                }}>
+                Call API
+            </button>
+            <button
+                onClick={() => {
+                    // api.recursivelyGetFilesInFolder("1e-wJGfp-BC-OLcjyxbV3ukhOuuA_8uxT").then(
+                    //     console.log
+                    // );
+                    api.getAllFilesContents("1e-wJGfp-BC-OLcjyxbV3ukhOuuA_8uxT").then(({ data, error }) => {
+                        if (error) console.error(error);
+                        else {
+                            console.log(data);
+                            Parser.readFlashCardFiles(data, setData);
+                        }
+                    });
+                }}>
+                GET THEM CARDS
+            </button>
+            <FileDownload />
+            <FileUpload
                 onChange={(e) => {
-                    Parser.readFlashCardFiles(e.target.files, (d) =>
-                        setData(d[Object.keys(d)[0]])
-                    );
-                }}></input>
-            <div style={{ display: "flex" }}>
-                <button
-                    onClick={() => {
-                        if (currentTopic > 0) {
-                            console.log(getSubHeading(data[currentTopic].topic));
-                            setCurrentTopic(currentTopic - 1);
-                            setCurrentCard(0);
-                        }
-                    }}>
-                    Prev Topic
-                </button>
-                <button
-                    onClick={() => {
-                        if (currentTopic < data.length - 1) {
-                            setCurrentTopic(currentTopic + 1);
-                            setCurrentCard(0);
-                        }
-                    }}>
-                    Next Topic
-                </button>
-            </div>
-            <div style={{ display: "flex" }}>
-                <button
-                    onClick={() => {
-                        if (currentCard > 0) {
-                            setCurrentCard(currentCard - 1);
-                        }
-                    }}>
-                    Prev Card
-                </button>
-                <button
-                    onClick={() => {
-                        if (currentCard < data[currentTopic].cards.length - 1) {
-                            setCurrentCard(currentCard + 1);
-                        }
-                    }}>
-                    Next Card
-                </button>
-            </div>
-            {/* <FlashCard
-                frontHeading={data && getMainHeading(data[currentTopic].topic)}
-                frontSubheading={data && getSubHeading(data[currentTopic].topic)}
-                frontText={data && data[currentTopic].cards[currentCard].question}
-                backText={data && data[currentTopic].cards[currentCard].answer}
-            /> */}
-            <pre>{JSON.stringify(data, null, 2)}</pre>
-            {data?.map((section) => {
-                return section.cards.map((card) => {
-                    return (
-                        <FlashCard
-                            frontHeading={getMainHeading(section.topic)}
-                            frontSubheading={getSubHeading(section.topic)}
-                            frontText={card.question}
-                            backText={card.answer}
-                        />
-                    );
-                });
-            })}
-            {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
+                    Parser.readFlashCardFiles(e.target.files, setData);
+                }}
+            />
+            <FlashCardViewer cards={data} />
         </div>
     );
 }
