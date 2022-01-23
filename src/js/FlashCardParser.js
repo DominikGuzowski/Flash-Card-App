@@ -590,3 +590,25 @@ const matchMode = (line) => ({
 const clearTrailingWhiteSpace = (string) => reverseString(clearLeadingWhiteSpace(reverseString(string)));
 
 const reverseString = (str) => str.split("").reverse().join("");
+
+export const treeifyCards = (cards) => {
+    let tree = { root: {} };
+    for (let file of Object.keys(cards)) {
+        for (let set of cards[file]) {
+            treeify(tree, set);
+        }
+    }
+    return tree.root;
+};
+
+const treeify = (tree, set) => {
+    let topics = set.topic.replaceAll("__notopic__.", "").split(".");
+    let root = tree.root;
+    for (let topic of topics) {
+        if (!root[topic]) {
+            root[topic] = {};
+        }
+        root = root[topic];
+    }
+    root.__flashcards = set.cards;
+};

@@ -275,7 +275,7 @@ body {
     position: absolute;
     inset: 0;
     margin: auto;
-    box-shadow: 0.075rem 0.075rem 0.075rem #0006;
+    box-shadow: 0.075rem 0.075rem 0.075rem #0008;
     border-radius: 50%;
     width: 1.5em;
     aspect-ratio: 1;
@@ -561,4 +561,264 @@ body {
     .navigation {
         display: none;
     }
+}
+
+/* Custom Select */
+
+/* .custom-select * {
+    all: unset;
+} */
+
+.custom-select {
+    color: #1b3049;
+    min-width: 1.5em;
+    height: 2em;
+    background-color: currentColor;
+    position: relative;
+    margin: 0 0.25em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font: var(--font-bold);
+    user-select: none;
+    outline: none;
+    transition-duration: 150ms;
+    transition: color 150ms linear;
+}
+.custom-select[data-selected="$None_Selected$"] {
+    color: #3d7921;
+}
+
+.custom-select * {
+    outline: none;
+}
+.custom-select:focus-visible,
+.custom-select:focus-within,
+.custom-select:hover {
+    color: #255996;
+    cursor: pointer;
+}
+
+.custom-select:last-of-type {
+    margin-right: 1.25em;
+}
+.custom-select__label {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    text-anchor: middle;
+    width: 100%;
+    height: 100%;
+    padding-bottom: 1px;
+    color: #ccc;
+    pointer-events: none;
+    padding-inline: 0.25em;
+    position: relative;
+}
+.custom-select:focus-visible .custom-select__label,
+.custom-select:focus-within .custom-select__label,
+.custom-select:hover .custom-select__label {
+    color: white;
+}
+
+.custom-select[data-selected="$None_Selected$"] .custom-select__label::before,
+.custom-select[data-selected="$None_Selected$"] .custom-select__label::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background-color: white;
+    z-index: 100;
+    transform: translateX(0.075em);
+}
+.custom-select[data-selected="$None_Selected$"] .custom-select__label::before {
+    width: 1em;
+    height: 0.25em;
+}
+.custom-select[data-selected="$None_Selected$"] .custom-select__label::after {
+    width: 0.25em;
+    height: 1em;
+}
+.custom-select__box {
+    min-width: 1em;
+    height: 2em;
+    background-color: currentColor;
+    display: inline-block;
+    position: relative;
+}
+
+.custom-select__box::before,
+.custom-select__box::after {
+    position: absolute;
+    content: "";
+    top: 0;
+    height: 2em;
+    width: 1em;
+}
+.custom-select__box::before {
+    left: -1em;
+}
+.custom-select__box::after {
+    right: -1em;
+}
+.custom-select__options {
+    display: none;
+    position: absolute;
+    background-color: currentColor;
+    top: 115%;
+    left: -1.075em;
+    width: calc(100% + 1.075em);
+    min-width: min-content;
+    margin: 0 auto;
+    padding: 0;
+    max-height: 10em;
+    overflow-y: scroll;
+    z-index: 100000;
+
+    /* border: 2px solid black; */
+    box-shadow: 0 0 0 0.05rem white;
+}
+.custom-select[data-selected="$None_Selected$"] .custom-select__options {
+    transform: translateX(-0.15em);
+}
+.custom-select__options::-webkit-scrollbar {
+    display: none;
+}
+.custom-select__options.show {
+    display: block;
+}
+
+.custom-select:focus-visible .custom-select__options,
+.custom-select:focus-within .custom-select__options {
+    display: block;
+}
+
+.custom-select__option {
+    padding: 0.25em;
+    margin: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 15em;
+    color: white;
+    background-color: #1b3049;
+    font: var(--font-normal);
+    transition: background-color 150ms linear;
+}
+
+.custom-select__option:hover,
+.custom-select__option:focus-visible {
+    content: "";
+    cursor: pointer;
+    background-color: #719ed1;
+    color: black;
+}
+.custom-select__option.selected {
+    font: var(--font-bold);
+    background-color: #3b76b9;
+    color: white;
+}
+.custom-select__option.selected:hover {
+    cursor: default;
+}
+
+.custom-select__right-arrow::after {
+    content: "";
+    position: absolute;
+    height: 2em;
+    margin: auto;
+    /* width: 2em; */
+    top: 0;
+    left: 100%;
+    /* background-color: red; */
+    border-top: 1em solid transparent;
+    border-bottom: 1em solid transparent;
+    border-left: 1em solid currentColor;
+    /* box-shadow: 0.125em 0.125em 0.1em #0002; */
+}
+
+.custom-select__left-arrow,
+.custom-select__right-arrow {
+    pointer-events: none;
+}
+.custom-select__left-arrow::before {
+    content: "";
+    position: absolute;
+    height: 1.5em;
+    margin: auto;
+    width: 1.5em;
+    top: 0;
+    right: 100%;
+    border-top: 0.75em solid transparent;
+    border-bottom: 0.75em solid transparent;
+    border-right: 0.75em solid currentColor;
+    transform: translate(50%, -50%) rotate(135deg);
+}
+.custom-select__left-arrow::after {
+    content: "";
+    position: absolute;
+    height: 1.5em;
+    margin: auto;
+    width: 1.5em;
+    bottom: 0;
+    right: 100%;
+    border-top: 0.75em solid transparent;
+    border-bottom: 0.75em solid transparent;
+    border-right: 0.75em solid currentColor;
+    transform: translate(50%, 50%) rotate(-135deg);
+}
+
+.card-tree-select {
+    display: flex;
+    width: 50vw;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.3em 1em;
+    flex-wrap: wrap;
+}
+
+.card-tree-select__button {
+    appearance: none;
+    background-color: #be0d00;
+    color: white;
+    /* transform: skew(-20deg); */
+    border: none;
+    padding: 0.25em 0.5em;
+    height: 2em;
+    font: var(--font-extra-bold);
+    /* margin-left: 1em; */
+    transition: background-color 150ms linear, transform 150ms linear;
+    position: relative;
+}
+.card-tree-select__button:hover {
+    cursor: pointer;
+    background-color: #d41a0d;
+    transform: translateY(-2.5%);
+}
+
+.card-tree-select__button::before,
+.card-tree-select__button::after {
+    color: #be0d00;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -1em;
+    /* width: 2em; */
+    border: 1em transparent solid;
+    transition: color 150ms linear;
+}
+
+.card-tree-select__button::before {
+    left: 100%;
+    border-left-color: currentColor;
+}
+
+.card-tree-select__button::after {
+    left: -2em;
+    border-right-color: currentColor;
+}
+
+.card-tree-select__button:hover::before,
+.card-tree-select__button:hover::after {
+    color: #d41a0d;
 }

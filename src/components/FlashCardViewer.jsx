@@ -11,6 +11,7 @@ export const FlashCardViewer = ({ cards: data = null, onDifficultyClick }) => {
     useEffect(() => {
         if (data) {
             setCards(data);
+            setAllowSelectDifficulty(false);
             setCurrentCard(data?.[Object.keys(data)?.[0]][0].cards[0]);
         }
     }, [data]);
