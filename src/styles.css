@@ -134,6 +134,7 @@ body {
 
 .flash-card__content {
     text-align: center;
+    font: var(--font-normal);
     position: relative;
     transition: transform 0.75s ease-in-out;
     transform-style: preserve-3d;
@@ -141,7 +142,9 @@ body {
     cursor: pointer;
     transition-duration: center center;
 }
-
+.flash-card__content :where(ol, ul, li) {
+    text-align: left;
+}
 .flash-card.flash-card--front-visible .flash-card__content {
     transform: rotateY(0turn);
 }
@@ -177,6 +180,7 @@ body {
 
 .flash-card__heading {
     font: var(--font-black);
+    text-align: center;
     letter-spacing: 1px;
     margin: 0;
     transform-style: preserve-3d;
@@ -575,7 +579,7 @@ body {
     height: 2em;
     background-color: currentColor;
     position: relative;
-    margin: 0 0.25em;
+    margin: 0 0.75em;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -603,17 +607,21 @@ body {
     margin-right: 1.25em;
 }
 .custom-select__label {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
+    display: inline-block;
+    /* justify-content: flex-start;
+    align-items: center; */
     text-anchor: middle;
     width: 100%;
     height: 100%;
-    padding-bottom: 1px;
+    padding-block: 0.35em;
     color: #ccc;
     pointer-events: none;
-    padding-inline: 0.25em;
+    padding-inline: 0.35em 0.25em;
     position: relative;
+    max-width: 13.8em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 .custom-select:focus-visible .custom-select__label,
 .custom-select:focus-within .custom-select__label,
@@ -629,7 +637,7 @@ body {
     margin: auto;
     background-color: white;
     z-index: 100;
-    transform: translateX(0.075em);
+    transform: translateX(0.025em);
 }
 .custom-select[data-selected="$None_Selected$"] .custom-select__label::before {
     width: 1em;
@@ -770,20 +778,21 @@ body {
 
 .card-tree-select {
     display: flex;
-    width: 50vw;
+    width: 75vw;
     justify-content: flex-start;
     align-items: center;
-    gap: 0.3em 1em;
+    gap: 0.3em 0em;
     flex-wrap: wrap;
 }
 
 .card-tree-select__button {
     appearance: none;
-    background-color: #be0d00;
+    background-color: #a13cff;
     color: white;
     /* transform: skew(-20deg); */
     border: none;
     padding: 0.25em 0.5em;
+    margin: 0 1em;
     height: 2em;
     font: var(--font-extra-bold);
     /* margin-left: 1em; */
@@ -792,13 +801,12 @@ body {
 }
 .card-tree-select__button:hover {
     cursor: pointer;
-    background-color: #d41a0d;
-    transform: translateY(-2.5%);
+    background-color: #b15eff;
 }
 
 .card-tree-select__button::before,
 .card-tree-select__button::after {
-    color: #be0d00;
+    color: #a13cff;
     content: "";
     position: absolute;
     top: 0;
@@ -820,5 +828,60 @@ body {
 
 .card-tree-select__button:hover::before,
 .card-tree-select__button:hover::after {
-    color: #d41a0d;
+    color: #b15eff;
+}
+
+.card-tree-select__del-button {
+    appearance: none;
+    background-color: #a52a21;
+    color: white;
+    /* transform: skew(-20deg); */
+    border: none;
+    padding: 0.25em 0.5em;
+    margin-right: 0.75em;
+    min-width: 1.5em;
+    height: 2em;
+    font: var(--font-extra-bold);
+    /* margin-left: 1em; */
+    transition: background-color 150ms linear;
+    position: relative;
+}
+
+.card-tree-select__del-button::after {
+    content: "";
+    position: absolute;
+    left: 100%;
+    top: 0;
+    border: 1em transparent solid;
+    border-left-color: #a52a21;
+    transition: border-left-color 150ms linear;
+}
+
+.card-tree-select__del-button::before {
+    content: "";
+    position: absolute;
+    left: 75%;
+    height: 0.25em;
+    width: 1em;
+    background-color: white;
+    transform: translate(-50%, -50%);
+}
+
+.card-tree-select__del-button:hover {
+    background-color: #c9392f;
+    cursor: pointer;
+}
+.card-tree-select__del-button:hover::after {
+    border-left-color: #c9392f;
+}
+
+.card-tree-select__del-button:disabled {
+    background-color: #666;
+}
+
+.card-tree-select__del-button:disabled:hover {
+    cursor: not-allowed;
+}
+.card-tree-select__del-button:disabled::after {
+    border-left-color: #666;
 }

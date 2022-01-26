@@ -11,6 +11,8 @@ import { FileUpload } from "./components/FileUpload";
 import { FileDownload } from "./components/FileDownload";
 import { CardTreeSelect } from "./components/CardTreeSelect";
 import { ArrowSelect } from "./components/ArrowSelect";
+import { Routes } from "./Routes";
+import { Markdown } from "./components/Markdown";
 
 const pages = [
     { name: "Home", link: "home" },
@@ -21,7 +23,7 @@ const pages = [
 function App() {
     const [data, setData] = useState(null);
     const [currentTopic, setCurrentTopic] = useState(0);
-    const [currentCard, setCurrentCard] = useState(0);
+    const [currentCards, setCurrentCards] = useState([]);
     const [tree, setTree] = useState(null);
     const getSubHeading = (title) => {
         let headings = title.split(".");
@@ -46,41 +48,18 @@ function App() {
         return () => {};
     }, [data]);
 
-    // let a = 1;
-    // if (a === 1) {
-    //     return (
-    //         <div className='main'>
-    //             <DifficultyRating onClick={(e) => console.log(e)} />
-    //         </div>
-    //     );
-    // } else
-    let options = [
-        { value: "Hello", label: "WORLD" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "$None_Selected$", label: "Selection" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-        { value: "cheese", label: "grouier cheese is best" },
-    ];
     let testing = false;
     if (testing)
         return (
-            <div className='main'>
-                <ArrowSelect options={options} onSelect={(e) => console.log(e)} />
-                <ArrowSelect options={options} onSelect={(e) => console.log(e)} />
-            </div>
+            <Markdown
+                markdown={`# Hello World\n - p1\n - p2\n - p3\n\n![aria text](https://media.istockphoto.com/photos/portrait-of-smiling-beautiful-woman-beekeper-picture-id1295674526?b=1&k=20&m=1295674526&s=170667a&w=0&h=Dl2LrBHOtXOwimP5wUmYDino-gbfp9o-M_T72x8KDUk=)\n\n
+                \n Some normal text and $m_i$ and $$\\frac{1}{2}$$`}
+            />
         );
     else
         return (
             <div className='main'>
-                <Navigation pages={pages} />
+                {/* <Navigation pages={pages} /> */}
                 {/* <GDriveLogin />
             <button
             onClick={() => {
@@ -110,14 +89,25 @@ function App() {
                 <div style={{ display: "flex", gap: "1em" }}>
                     <FileDownload />
                     <FileUpload
+                        directories
                         onChange={(e) => {
                             Parser.readFlashCardFiles(e.target.files, setData);
                         }}
                     />
+                    {/* <FileUpload
+                        onChange={(e) => {
+                            console.log(e.target.files);
+                        }}
+                    /> */}
                 </div>
 
-                <CardTreeSelect tree={tree} ignoreKeys={["__flashcards"]} />
-                <FlashCardViewer cards={data} />
+                <CardTreeSelect
+                    tree={tree}
+                    ignoreKeys={["__flashcards"]}
+                    collectKey={"__flashcards"}
+                    onSelect={setCurrentCards}
+                />
+                <FlashCardViewer cards={currentCards} />
             </div>
         );
 }

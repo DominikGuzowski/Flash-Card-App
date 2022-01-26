@@ -2,22 +2,22 @@ import React, { useState, useEffect } from "react";
 import { DifficultyRating } from "./DifficultyRating";
 import { FlashCard } from "./FlashCard";
 
-export const FlashCardViewer = ({ cards: data = null, onDifficultyClick }) => {
-    const [cards, setCards] = useState({});
+export const FlashCardViewer = ({ cards: data = [], onDifficultyClick }) => {
+    const [cards, setCards] = useState([]);
     const [currentCard, setCurrentCard] = useState({});
     const [changing, toggleChanging] = useState(false);
     const [allowSelectDifficulty, setAllowSelectDifficulty] = useState(false);
 
     useEffect(() => {
-        if (data) {
+        if (data && data.length > 0) {
             setCards(data);
             setAllowSelectDifficulty(false);
-            setCurrentCard(data?.[Object.keys(data)?.[0]][0].cards[0]);
+            setCurrentCard(data[0]);
         }
     }, [data]);
 
     const getSubHeading = (title) => {
-        let headings = title.split(".");
+        let headings = title.split("*:-:*");
         headings.pop();
         return headings
             .filter((x) => x !== "__notopic__")
@@ -27,7 +27,7 @@ export const FlashCardViewer = ({ cards: data = null, onDifficultyClick }) => {
 
     const getMainHeading = (title) => {
         return title
-            .split(".")
+            .split("*:-:*")
             .pop()
             .replace(/([a-z0-9])([A-Z])/g, "$1 $2");
     };
@@ -42,10 +42,13 @@ export const FlashCardViewer = ({ cards: data = null, onDifficultyClick }) => {
             card.classList.add("flash-card--front-visible");
 
             setTimeout(() => {
-                let temp = cards;
-                temp[Object.keys(temp)[0]][0].cards.push(temp[Object.keys(temp)[0]][0].cards.shift());
+                let temp = cards.slice();
+                // console.log(temp);
+                temp.push(temp.shift());
+                // console.log(temp);
                 setCards(temp);
-                setCurrentCard(temp[Object.keys(temp)[0]][0].cards[0]);
+                setCurrentCard({ ...temp[0] });
+                // card.style.animation = "slide-in 1s forwards";
                 setTimeout(() => {
                     toggleChanging(false);
                 }, 750);
@@ -55,12 +58,14 @@ export const FlashCardViewer = ({ cards: data = null, onDifficultyClick }) => {
 
     React.useEffect(() => {
         if (!currentCard) return;
+        console.log(currentCard);
         let card = document.getElementById(currentCard.id + "_card");
+        console.log(card);
         if (!card) return;
         card.style.animation = "slide-in 1s forwards";
     }, [currentCard]);
 
-    if (!cards || Object.keys(cards).length === 0) return null;
+    if (!cards || cards.length === 0) return null;
     return (
         <div className='flash-card__wrapper'>
             <div className='flash-card__container'>
@@ -69,7 +74,7 @@ export const FlashCardViewer = ({ cards: data = null, onDifficultyClick }) => {
                         if (!allowSelectDifficulty)
                             setTimeout(() => {
                                 setAllowSelectDifficulty(true);
-                            }, 1000);
+                            }, 750);
                     }}
                     cardId={currentCard.id}
                     frontHeading={getMainHeading(currentCard.topic)}

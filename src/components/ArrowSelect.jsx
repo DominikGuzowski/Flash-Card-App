@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 
-export const ArrowSelect = ({ options = [], onSelect }) => {
+export const ArrowSelect = ({ options = [], onSelect, current }) => {
     const defaultValue = { value: "$None_Selected$", label: "" };
     const [id] = useState((Math.random() * 10000000).toFixed(0));
     const [selected, setSelected] = useState(defaultValue);
     useEffect(() => {
         hideDropdown();
     }, [selected]);
+
+    useEffect(() => {
+        if (!current) setSelected(defaultValue);
+    }, [current]);
     const showDropdown = () => {
         const dropdown = document.querySelector(`#custom-select_${id}.custom-select__options`);
         dropdown.classList.add("show");

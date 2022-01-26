@@ -1,5 +1,4 @@
 import sha256 from "sha256";
-const fileInput = document.getElementById("fsc-file");
 
 /*
     TOPIC MODES
@@ -11,7 +10,7 @@ const fileInput = document.getElementById("fsc-file");
     [topic.sub1.sub2] - defines an absolute topic path and re-declares the main topic
     [.] - returns to base level of current main topic.
 */
-const download = (filename, text) => {
+export const download = (filename, text) => {
     let element = document.createElement("a");
     element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
     element.setAttribute("download", filename);
@@ -24,45 +23,36 @@ const download = (filename, text) => {
     document.body.removeChild(element);
 };
 
-const btn = document.getElementById("download-btn");
-let globalRes = {};
-// btn.onclick = (e) => {
-//     download("flashcards.json", JSON.stringify(globalRes, null, 4));
-// }
-
-// fileInput.onchange = (e) => {
-//     readFlashCardFiles(e.target.files, jsonToFlashCard);
-// };
-
 export const readFlashCardFiles = (files, result) => {
     if (!files) {
         result?.({});
         return;
     }
-    id = 0;
     let accumulator = {};
     const fileCount = files.length;
     let currentCount = 0;
     const resultAccumulatorFunction = (partialResult) => {
-        accumulator = { ...accumulator, ...partialResult };
         currentCount++;
-        if (currentCount === fileCount) result?.(accumulator);
+        if (partialResult[Object.keys(partialResult)[0]]) accumulator = { ...accumulator, ...partialResult };
+        if (currentCount === fileCount) {
+            result?.(accumulator);
+        }
     };
-    [...files].forEach((file) => readFlashCardFile(file, resultAccumulatorFunction));
+    [...files].forEach((file, i) => readFlashCardFile(file, resultAccumulatorFunction, i));
 };
 
-export const readFlashCardFile = (FILE, result) => {
+export const readFlashCardFile = (FILE, result, index) => {
     if (!FILE.name.endsWith(FLASH_CARD_FILE_EXTENSION)) {
         result?.({});
         return;
     }
     const fileReader = new FileReader();
     fileReader.onloadend = () => {
-        result?.({ [FILE.name]: parseFlashCard(fileReader.result) });
+        result?.({ [index + "_" + FILE.name]: parseFlashCard(fileReader.result) });
     };
     fileReader.readAsText(FILE);
 };
-var id = 0;
+
 export const parseFlashCard = (flashCard) => {
     let result = [];
     const content = flashCard.replaceAll("\r", "");
@@ -70,15 +60,17 @@ export const parseFlashCard = (flashCard) => {
     let state = 0;
     let currentTopic = null;
     const lines = content.split("\n");
+    let parent = clearLeadingWhiteSpace(lines[0]);
+    if (!parent.includes("::")) {
+        return null;
+    }
+    parent = parent.replace(/^[ \t]*::[ \t]*/g, "");
     for (let line of lines) {
-        line = clearLeadingWhiteSpace(line);
+        // line = clearLeadingWhiteSpace(line);
         if (line.length === 0) continue;
 
-        // console.log(matchMode(line));
         let redo = true;
         while (redo) {
-            // console.log("DOING", line);
-            // console.warn("State:", state);
             redo = false;
             const {
                 topic,
@@ -111,7 +103,6 @@ export const parseFlashCard = (flashCard) => {
                     state = 0;
                 }
             }
-            // console.error("State:", state);
 
             switch (state) {
                 case 1: {
@@ -132,10 +123,8 @@ export const parseFlashCard = (flashCard) => {
                 }
                 case 5: {
                     currentTopic = handleInlineQuestion(currentTopic, inlineQuestion);
-                    // console.log(inlineQuestion);
                     line = line.substring(line.indexOf(inlineQuestion[0]) + inlineQuestion[0].length);
                     const { inlineAnswer: a1, inlineAnswerStart: a2 } = regexMatch(line);
-                    // console.log(line, a1, a2);
                     if (a1 || a2) redo = true;
                     else state = 0;
 
@@ -177,16 +166,31 @@ export const parseFlashCard = (flashCard) => {
                 default:
                     break;
             }
-            // console.log("REDO", redo);
-            // console.log(currentTopic?.cards[currentTopic.cards.length - 1]);
         }
     }
-    if (currentTopic) result.push(currentTopic);
+    if (currentTopic) {
+        if (currentTopic.cards.length - 1 >= 0) {
+            currentTopic.cards[currentTopic.cards.length - 1].id = JSON.stringify(
+                currentTopic.cards[currentTopic.cards.length - 1]
+            );
+            result.push(currentTopic);
+        }
+    }
+    appendParent(result, parent);
     return cleanResults(mergeResults(result));
 };
 
+const appendParent = (result, parent) => {
+    for (let i = 0; i < result.length; i++) {
+        result[i].topic = parent + DELIMITER + result[i].topic;
+        for (let j = 0; j < result[i].cards.length; j++) {
+            result[i].cards[j].topic = parent + DELIMITER + result[i].cards[j].topic;
+        }
+    }
+};
+
 const handleInlineAnswer = (currentTopic, answer) => {
-    const formattedAnswer = answer[0].replaceAll(/@![ \t]*/g, "").replaceAll(/[ \t]*!@/g, "");
+    const formattedAnswer = answer[0].replaceAll(/@!/g, "").replaceAll(/!@/g, "");
     if (
         !currentTopic.cards[currentTopic.cards.length - 1].answer &&
         currentTopic.cards[currentTopic.cards.length - 1].question
@@ -198,7 +202,7 @@ const handleInlineAnswer = (currentTopic, answer) => {
 
 const handleInlineAnswerStart = (currentTopic, line, answer) => {
     if (answer) {
-        const formattedAnswer = answer[0].replaceAll(/@![ \t]*/g, "");
+        const formattedAnswer = answer[0].replaceAll(/@!/g, "");
         if (
             !currentTopic.cards[currentTopic.cards.length - 1].answer &&
             currentTopic.cards[currentTopic.cards.length - 1].question
@@ -207,10 +211,8 @@ const handleInlineAnswerStart = (currentTopic, line, answer) => {
         }
     } else {
         const currentAnswer = currentTopic.cards[currentTopic.cards.length - 1].answer;
-        const endSpace = currentAnswer.match(/.*[ \t]$/);
-        const updatedAnswer = endSpace
-            ? currentAnswer + clearLeadingWhiteSpace(line)
-            : currentAnswer + " " + clearLeadingWhiteSpace(line);
+        // const endSpace = currentAnswer.match(/.*[ \t]$/);
+        const updatedAnswer = currentAnswer + "\n" + line;
         if (
             !currentTopic.cards[currentTopic.cards.length - 1].answer &&
             currentTopic.cards[currentTopic.cards.length - 1].question
@@ -222,13 +224,10 @@ const handleInlineAnswerStart = (currentTopic, line, answer) => {
 };
 
 const handleInlineAnswerEnd = (currentTopic, answer) => {
-    const formattedAnswer = answer[0].replace(/[ \t]*!@/g, "");
+    const formattedAnswer = answer[0].replace(/!@/g, "");
     const currentAnswer = currentTopic.cards[currentTopic.cards.length - 1].answer;
     if (!currentAnswer) return currentTopic;
-    const endSpace = currentAnswer.match(/.*[ \t]$/);
-    const updatedAnswer = endSpace
-        ? currentAnswer + clearLeadingWhiteSpace(formattedAnswer)
-        : currentAnswer + " " + clearLeadingWhiteSpace(formattedAnswer);
+    const updatedAnswer = currentAnswer + "\n" + formattedAnswer;
 
     if (
         currentTopic.cards[currentTopic.cards.length - 1].answer &&
@@ -249,12 +248,9 @@ const handleInlineQuestionEnd = (currentTopic, question) => {
             JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
         );
     }
-    const formattedQuestion = clearLeadingWhiteSpace(question[0].replace(/[ \t]*!\$/g, ""));
+    const formattedQuestion = question[0].replace(/!\?/g, "");
     const currentQuestion = currentTopic.cards[currentTopic.cards.length - 1].question;
-    const endSpace = currentQuestion.match(/.*[ \t]$/);
-    const updatedQuestion = endSpace
-        ? currentQuestion + clearLeadingWhiteSpace(formattedQuestion)
-        : currentQuestion + " " + clearLeadingWhiteSpace(formattedQuestion);
+    const updatedQuestion = currentQuestion + "\n" + formattedQuestion;
 
     currentTopic.cards[currentTopic.cards.length - 1].question = updatedQuestion;
     return currentTopic;
@@ -271,26 +267,21 @@ const handleInlineQuestionStart = (currentTopic, line, question) => {
         );
     }
     if (question) {
-        const formattedQuestion = clearLeadingWhiteSpace(question[0].replaceAll(/\$![ \t]*/g, ""));
+        const formattedQuestion = question[0].replaceAll(/\?!/g, "");
         currentTopic.cards.push({
             question: formattedQuestion,
             topic: currentTopic.topic,
         });
     } else {
         const currentQuestion = currentTopic.cards[currentTopic.cards.length - 1].question;
-        const endSpace = currentQuestion.match(/.*[ \t]$/);
-        const updatedQuestion = endSpace
-            ? currentQuestion + clearLeadingWhiteSpace(line)
-            : currentQuestion + " " + clearLeadingWhiteSpace(line);
+        const updatedQuestion = currentQuestion + "\n" + line;
         currentTopic.cards[currentTopic.cards.length - 1].question = updatedQuestion;
     }
     return currentTopic;
 };
 
 const handleInlineQuestion = (currentTopic, question) => {
-    const formattedQuestion = clearLeadingWhiteSpace(
-        question[0].replaceAll(/\$![ \t]*/g, "").replaceAll(/[ \t]*!\$/g, "")
-    );
+    const formattedQuestion = question[0].replaceAll(/\?!/g, "").replaceAll(/!\?/g, "");
     if (
         currentTopic.cards.length > 0 &&
         currentTopic.cards[currentTopic.cards.length - 1].answer &&
@@ -314,8 +305,8 @@ const handleQuestion = (currentTopic, line) => {
             cards: [],
         };
     }
-    if (line.startsWith("$$")) {
-        let l = clearLeadingWhiteSpace(line.replace(FLASH_CARD_QUESTION_REGEX, ""));
+    if (line.startsWith("??")) {
+        let l = line.replace(FLASH_CARD_QUESTION_REGEX, "");
         if (currentTopic.cards.length === 0) {
             currentTopic.cards.push({ question: l, topic: currentTopic.topic });
         } else if (
@@ -327,14 +318,14 @@ const handleQuestion = (currentTopic, line) => {
             );
             currentTopic.cards.push({ question: l, topic: currentTopic.topic });
         } else {
-            let q = currentTopic.cards[currentTopic.cards.length - 1].question;
-            let ln = q.charAt(q.length - 1) !== " " ? " " + clearLeadingWhiteSpace(l) : clearLeadingWhiteSpace(l);
-            currentTopic.cards[currentTopic.cards.length - 1].question += ln;
+            // let q = currentTopic.cards[currentTopic.cards.length - 1].question;
+            // let ln = q.charAt(q.length - 1) !== " " ? " " + clearLeadingWhiteSpace(l) : clearLeadingWhiteSpace(l);
+            currentTopic.cards[currentTopic.cards.length - 1].question += "\n" + l;
         }
     } else {
-        let q = currentTopic.cards[currentTopic.cards.length - 1].question;
-        let ln = q.charAt(q.length - 1) !== " " ? " " + clearLeadingWhiteSpace(line) : clearLeadingWhiteSpace(line);
-        currentTopic.cards[currentTopic.cards.length - 1].question += ln;
+        // let q = currentTopic.cards[currentTopic.cards.length - 1].question;
+        // let ln = q.charAt(q.length - 1) !== " " ? " " + clearLeadingWhiteSpace(line) : clearLeadingWhiteSpace(line);
+        currentTopic.cards[currentTopic.cards.length - 1].question += "\n" + line;
     }
     return currentTopic;
 };
@@ -347,19 +338,19 @@ const handleAnswer = (currentTopic, line) => {
         };
     }
     if (line.startsWith("@@")) {
-        let l = clearLeadingWhiteSpace(line.replace(FLASH_CARD_ANSWER_REGEX, ""));
+        let l = line.replace(FLASH_CARD_ANSWER_REGEX, "");
         if (currentTopic.cards[currentTopic.cards.length - 1]) {
             if (currentTopic.cards[currentTopic.cards.length - 1].answer !== undefined) {
-                let a = currentTopic.cards[currentTopic.cards.length - 1].answer;
-                let ln = a.charAt(a.length - 1) !== " " ? " " + clearLeadingWhiteSpace(l) : clearLeadingWhiteSpace(l);
-                currentTopic.cards[currentTopic.cards.length - 1].answer += ln;
+                // let a = currentTopic.cards[currentTopic.cards.length - 1].answer;
+                // let ln = a.charAt(a.length - 1) !== " " ? " " + clearLeadingWhiteSpace(l) : clearLeadingWhiteSpace(l);
+                currentTopic.cards[currentTopic.cards.length - 1].answer += "\n" + l;
             } else currentTopic.cards[currentTopic.cards.length - 1].answer = l;
         }
     } else {
         if (currentTopic.cards[currentTopic.cards.length - 1]) {
-            let a = currentTopic.cards[currentTopic.cards.length - 1].answer;
-            let ln = a.charAt(a.length - 1) !== " " ? " " + clearLeadingWhiteSpace(line) : clearLeadingWhiteSpace(line);
-            currentTopic.cards[currentTopic.cards.length - 1].answer += ln;
+            // let a = currentTopic.cards[currentTopic.cards.length - 1].answer;
+            // let ln = a.charAt(a.length - 1) !== " " ? " " + clearLeadingWhiteSpace(line) : clearLeadingWhiteSpace(line);
+            currentTopic.cards[currentTopic.cards.length - 1].answer += "\n" + line;
         }
     }
     return currentTopic;
@@ -383,33 +374,33 @@ const handleTopic = (currentTopic, topic, result) => {
     if (title === ".") {
         title = currentTopic.topic.split(".")[0] || "__notopic__";
     } else if (title.startsWith("+")) {
-        title = currentTopic.topic + "." + title.substring(1);
+        title = currentTopic.topic + DELIMITER + title.substring(1);
     } else if (title.startsWith(".")) {
-        title = currentTopic.topic.split(".")[0] + title;
+        title = currentTopic.topic.split(DELIMITER)[0] + title;
     } else if (title.startsWith("-")) {
         let nth = title.match(/-[0-9]+-/);
         if (nth) {
-            let titles = currentTopic.topic.split(".");
+            let titles = currentTopic.topic.split(DELIMITER);
             let idx = titles.length - parseInt(nth[0].replaceAll("-", ""));
             let newTitle = "";
             for (let i = 0; i < idx; i++) {
-                newTitle += titles[i] + ".";
+                newTitle += titles[i] + DELIMITER;
             }
             newTitle += title.substring(nth[0].length);
             title = newTitle;
         } else {
-            let titles = currentTopic.topic.split(".");
+            let titles = currentTopic.topic.split(DELIMITER);
             let idx = titles.length - 1;
             let newTitle = "";
             for (let i = 0; i < idx; i++) {
-                newTitle += titles[i] + ".";
+                newTitle += titles[i] + DELIMITER;
             }
             newTitle += title.substring(1);
             title = newTitle;
         }
     }
 
-    title = title.replaceAll(/\.+/g, ".");
+    // title = title.replaceAll(/\.+/g, ".");
     currentTopic = {
         topic: title,
         cards: [],
@@ -430,11 +421,11 @@ const handleMarkdownTopic = (currentTopic, topic, line, result) => {
         }
         result.push(currentTopic);
     }
-    let recentMostTopic = (currentTopic?.topic || "").split(".");
+    let recentMostTopic = (currentTopic?.topic || "").split(DELIMITER);
     if (clearLeadingWhiteSpace(topic[0]).startsWith("##+")) {
         recentMostTopic.push(topic.input.replace(topic[0], ""));
         currentTopic = {
-            topic: recentMostTopic.join("."),
+            topic: recentMostTopic.join(DELIMITER),
             cards: [],
         };
     } else {
@@ -456,7 +447,7 @@ const handleMarkdownTopic = (currentTopic, topic, line, result) => {
             newTopic.push(inputTopic);
         }
         currentTopic = {
-            topic: newTopic.join("."),
+            topic: newTopic.join(DELIMITER),
             cards: [],
         };
     }
@@ -489,17 +480,18 @@ const mergeResults = (obj) => {
 
 const FLASH_CARD_FILE_EXTENSION = ".md";
 const FLASH_CARD_TOPIC_REGEX = /^[ \t]*\[.+\]/;
-const FLASH_CARD_QUESTION_REGEX = /^[ \t]*\$\$/;
+const FLASH_CARD_QUESTION_REGEX = /^[ \t]*\?\?/;
 const FLASH_CARD_ANSWER_REGEX = /^[ \t]*@@/;
 const FLASH_CARD_COMMENT_REGEX = /^[ \t]*--/;
 const FLASH_CARD_END_MODE_REGEX = /^[ \t]*!!/;
 const FLASH_CARD_MARKDOWN_TOPIC_REGEX = /^[ \t]*(##[+][ \t]|#{1,6}[ \t])/;
-const FLASH_CARD_INLINE_QUESTION_REGEX = /[ \t]*\$![^(!$)]*!\$/;
-const FLASH_CARD_INLINE_QUESTION_START_REGEX = /[ \t]*\$![^(!$)]*/;
-const FLASH_CARD_INLINE_QUESTION_END_REGEX = /[ \t]*[^($!)]*!\$/;
+const FLASH_CARD_INLINE_QUESTION_REGEX = /[ \t]*\?![^(!?)]*!\?/;
+const FLASH_CARD_INLINE_QUESTION_START_REGEX = /[ \t]*\?![^(!?)]*/;
+const FLASH_CARD_INLINE_QUESTION_END_REGEX = /[ \t]*[^(?!)]*!\?/;
 const FLASH_CARD_INLINE_ANSWER_REGEX = /[ \t]*@![^(!@)]*!@/;
 const FLASH_CARD_INLINE_ANSWER_START_REGEX = /[ \t]*@![^(!@)]*/;
 const FLASH_CARD_INLINE_ANSWER_END_REGEX = /[ \t]*[^(@!)]*!@/;
+const DELIMITER = "*:-:*";
 
 const cleanResults = (arr) => arr.filter((e) => e.cards.length > 0);
 const regexMatch = (line) => ({
@@ -533,7 +525,6 @@ const jsonToFlashCard = (json) => {
         }
         flashCardString += "## End: " + file + "\n\n";
     }
-    console.log(flashCardString);
     return flashCardString;
 };
 
@@ -545,7 +536,6 @@ const simpleRegexMatch = (startSymbol, endSymbol, string, options = {}) => {
     if (start === -1) return null;
     const end = string.indexOf(endSymbol, start);
     if (end === -1) return string.substring(start);
-    console.log(end, string.length - 1 - mustEndAt + (endSymbol.length - 1));
     if (mustEndAt !== null && end !== string.length - 1 - mustEndAt + (endSymbol.length - 1)) return null;
     return string.substring(start, end + endSymbol.length);
 };
@@ -602,7 +592,7 @@ export const treeifyCards = (cards) => {
 };
 
 const treeify = (tree, set) => {
-    let topics = set.topic.replaceAll("__notopic__.", "").split(".");
+    let topics = set.topic.replaceAll("__notopic__" + DELIMITER, "").split(DELIMITER);
     let root = tree.root;
     for (let topic of topics) {
         if (!root[topic]) {

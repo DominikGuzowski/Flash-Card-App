@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Markdown } from "./Markdown";
 
 const fillerHeading = "Lorem, ipsum dolor.";
 const fillerText =
@@ -57,12 +58,15 @@ export const FlashCard = ({
                 <div id={cardId + "_front"} className='flash-card__front'>
                     <h5 className='flash-card__subheading'>{frontSubheading}</h5>
                     <h3 className='flash-card__heading'>{frontHeading}</h3>
-                    <p className='flash-card__text'>{frontText}</p>
+                    {/* <p className='flash-card__text'>{frontText}</p> */}
+                    <Markdown className='flash-card__text' markdown={frontText} />
                 </div>
                 <div id={cardId + "_back"} className='flash-card__back'>
                     <h5 className='flash-card__subheading'>{backSub}</h5>
                     <h3 className='flash-card__heading'>{backTitle}</h3>
-                    <p className='flash-card__text'>{backBody}</p>
+                    <Markdown className='flash-card__text' markdown={backBody} />
+
+                    {/* <p className='flash-card__text'>{backBody}</p> */}
                 </div>
             </div>
         </div>
