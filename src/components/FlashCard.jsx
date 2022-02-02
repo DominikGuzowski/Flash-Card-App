@@ -13,8 +13,9 @@ export const FlashCard = ({
     backSubheading = frontSubheading,
     cardId = "",
     onReveal,
+    state,
 }) => {
-    const [id] = useState((Math.random() * 100000).toFixed(0));
+    const [id, setId] = useState((Math.random() * 100000).toFixed(0));
     const [visibility, setVisibility] = useState("flash-card--front-visible");
     const [backBody, setBackBody] = useState("");
     const [backTitle, setBackTitle] = useState("");
@@ -24,10 +25,19 @@ export const FlashCard = ({
             setVisibility("flash-card--back-visible");
             onReveal?.();
         } else {
-            setVisibility("flash-card--front-visible");
+            const card = document.getElementById(cardId + "_card");
+            if (card.classList.contains("flash-card--front-visible")) {
+                setVisibility("flash-card--back-visible");
+                card.classList.remove("flash-card--front-visible");
+                card.classList.add("flash-card--back-visible");
+                onReveal?.();
+            } else setVisibility("flash-card--front-visible");
         }
     };
 
+    useEffect(() => {
+        setId(state);
+    }, [state]);
     useEffect(() => {
         setVisibility("flash-card--front-visible");
         setTimeout(() => {
@@ -45,7 +55,7 @@ export const FlashCard = ({
     }, [visibility, cardId]);
 
     return (
-        <div id={cardId + "_card"} className={`flash-card ${visibility}`}>
+        <div id={cardId + "_card"} className={`flash-card ${visibility}`} style={{ animation: "slide-in 1s linear" }}>
             <div
                 tabIndex='0'
                 onKeyPress={(e) => {

@@ -24,6 +24,7 @@ export const download = (filename, text) => {
 };
 
 export const readFlashCardFiles = (files, result) => {
+    // test();
     if (!files) {
         result?.({});
         return;
@@ -48,7 +49,7 @@ export const readFlashCardFile = (FILE, result, index) => {
     }
     const fileReader = new FileReader();
     fileReader.onloadend = () => {
-        result?.({ [index + "_" + FILE.name]: parseFlashCard(fileReader.result) });
+        result?.({ [index + "_" + FILE.name]: optimizedHashParser(fileReader.result) });
     };
     fileReader.readAsText(FILE);
 };
@@ -170,8 +171,8 @@ export const parseFlashCard = (flashCard) => {
     }
     if (currentTopic) {
         if (currentTopic.cards.length - 1 >= 0) {
-            currentTopic.cards[currentTopic.cards.length - 1].id = JSON.stringify(
-                currentTopic.cards[currentTopic.cards.length - 1]
+            currentTopic.cards[currentTopic.cards.length - 1].id = sha256(
+                JSON.stringify(currentTopic.cards[currentTopic.cards.length - 1])
             );
             result.push(currentTopic);
         }
@@ -508,7 +509,7 @@ const regexMatch = (line) => ({
     inlineAnswerStart: line.match(FLASH_CARD_INLINE_ANSWER_START_REGEX),
     inlineAnswerEnd: line.match(FLASH_CARD_INLINE_ANSWER_END_REGEX),
 });
-const clearLeadingWhiteSpace = (str) => str.replaceAll(/^[ \t]+/g, "");
+const clearLeadingWhiteSpace = (str) => str.replace(/^[ \t\n\r]+/g, "");
 
 const jsonToFlashCard = (json) => {
     let flashCardString = "";
@@ -601,4 +602,54 @@ const treeify = (tree, set) => {
         root = root[topic];
     }
     root.__flashcards = set.cards;
+};
+const CARD_RGX =
+    /(?<=\s*#Q\s+)([\S\s]+?\s+#A\s+[\S\s]+?)((?=\s+#Q\s+)|(?=\s+#E\s+)|(?=\s*#{1,6}\s+))|((?<=\s*)#{1,6}\s+[\S \t]+?(?=\n))/g;
+const HEADERS = /(?<=\s*)#{1,6}\s+[\S \t]+?(?=\n)/g;
+const HEADER_RGX = /^#{1,6}(?=\s+[\S \t]+$)/g;
+const PARENT = /::.*?(?=\n)/g;
+
+const optimizedHashParser = (str) => {
+    let parent = str.match(PARENT)?.[0];
+    if (!parent) return [];
+    parent = parent.replaceAll(/:{2}\s*/g, "");
+    let res = [];
+    const matches = str.match(CARD_RGX);
+    let current = {
+        topic: "",
+        cards: [],
+    };
+    for (const m of matches) {
+        const header = m.match(HEADER_RGX)?.[0];
+        if (header) {
+            if (current.cards.length > 0) {
+                res.push({ ...current });
+                current.cards = [];
+            }
+            const position = header.length - 1;
+            let topics = current.topic.split(DELIMITER);
+            if (topics.length > 0 && topics[0].length === 0) topics.shift();
+            while (topics.length < position) {
+                topics.push("__notopic__");
+            }
+            topics = topics.slice(0, position);
+            topics.push(clearLeadingWhiteSpace(m.replaceAll(HEADER_RGX, "")));
+            current.topic = topics.join(DELIMITER);
+        } else if (current.topic.length > 0) {
+            const [question, answer] = m.split(/\s+#A\s+/g);
+            current.cards.push({ question, answer });
+        }
+    }
+    res.push({ ...current });
+    for (let i = 0; i < res.length; i++) {
+        let topics = res[i].topic.split(DELIMITER);
+        if (topics.length === 1 && topics[0].length === 0) topics = [];
+        res[i].topic = [parent, ...topics].join(DELIMITER);
+
+        for (let j = 0; j < res[i].cards.length; j++) {
+            res[i].cards[j].topic = res[i].topic;
+            res[i].cards[j].id = sha256(JSON.stringify(res[i].cards[j]));
+        }
+    }
+    return cleanResults(mergeResults(res));
 };

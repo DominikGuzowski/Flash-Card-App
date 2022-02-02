@@ -35,37 +35,37 @@ import * as UserData from "./UserDataJson";
 
 const ONE_DAY = 86400000;
 
-const createReturnObject = (newInterval, newCardMultiplier, cardId) => {
-    UserData.updateCard(cardId, newInterval, new Date(new Date().getTime() + newInterval).getTime(), newCardMultiplier);
+const createReturnObject = (interval, multiplier, cardId) => {
+    UserData.updateCard(cardId, interval, new Date(new Date().getTime() + interval).getTime(), multiplier);
     return {
-        newInterval,
-        newCardMultiplier,
+        interval,
+        multiplier,
     };
 };
 
 // dayDivTotal = current day / total number of days in timeframe
-const getNextInterval = (cardId, difficulty) => {
+export const getNextInterval = (cardId, difficulty) => {
     let { config } = UserData.getConfig();
     let card = UserData.getCardById(cardId);
     if (!card) {
         console.error("Unknown Card ID:", cardId);
         return null;
     }
-    let localCardMultiplier = card.multiplier < 0.25 ? 0.25 : card.multiplier;
+    let localCardMultiplier = card.multiplier < 1 ? 1 : card.multiplier;
 
     // new card
     if (card.interval === -1) {
         switch (difficulty) {
             case 5:
-                return createReturnObject(config.newCardSettings.again, config.baselineCardMultiplier, cardId);
+                return createReturnObject(config.newCardSettings.again, config.baselineMultiplier, cardId);
             case 4:
-                return createReturnObject(config.newCardSettings.hard, config.baselineCardMultiplier, cardId);
+                return createReturnObject(config.newCardSettings.hard, config.baselineMultiplier, cardId);
             case 3:
-                return createReturnObject(config.newCardSettings.medium, config.baselineCardMultiplier, cardId);
+                return createReturnObject(config.newCardSettings.medium, config.baselineMultiplier, cardId);
             case 2:
-                return createReturnObject(config.newCardSettings.easy, config.baselineCardMultiplier, cardId);
+                return createReturnObject(config.newCardSettings.easy, config.baselineMultiplier, cardId);
             case 1:
-                return createReturnObject(config.newCardSettings.easiest, config.baselineCardMultiplier, cardId);
+                return createReturnObject(config.newCardSettings.easiest, config.baselineMultiplier, cardId);
             default:
                 break;
         }
@@ -186,4 +186,4 @@ const main = (arr) => {
     }
 };
 
-main([3, 4, 4, 5, 5, 1, 4]);
+// main([3, 4, 4, 5, 5, 1, 4]);

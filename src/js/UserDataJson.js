@@ -30,8 +30,8 @@ export const setupConfig = (saveLocally) => {
             difficultyMultiplier: {
                 easiest: 3,
                 easy: 2,
-                medium: 0.9,
-                hard: 0.5,
+                medium: 1.25,
+                hard: 1,
             },
             newCardSettings: {
                 easiest: 3 * ONE_DAY,
@@ -56,7 +56,7 @@ export const setupConfig = (saveLocally) => {
             },
         },
     };
-    saveLocally && updateConfig(config);
+    if (saveLocally) updateConfig(config);
     return config;
 };
 
@@ -69,6 +69,7 @@ export const updateCard = (
     if (!cardId) return;
     let currentConfig = getConfig();
     currentConfig.cards[cardId] = {
+        id: cardId,
         interval,
         multiplier,
         nextDate,
@@ -85,6 +86,7 @@ export const updateCard_Drive = (
 ) => {
     if (!config || !cardId) return null;
     config.cards[cardId] = {
+        id: cardId,
         interval,
         multiplier,
         nextDate,
@@ -97,9 +99,30 @@ export const getCardById = (cardId) => {
 };
 
 const updateConfig = (config) => localStorage.setItem("config", JSON.stringify(config));
-const getConfig = () => JSON.parse(localStorage.getItem("config") || setupConfig());
+export const getConfig = () => JSON.parse(localStorage.getItem("config") || setupConfig());
 
 export const setPreferences = (preferences) => {
     let config = getConfig();
     config.config = { ...config.config, ...preferences };
+};
+
+export const defaultCard = (id) => {
+    let { config } = getConfig();
+    return {
+        id,
+        interval: -1,
+        multiplier: config.baselineMultiplier,
+        nextDate: 0,
+    };
+};
+
+export const initialiseCards = (cards) => {
+    let config = getConfig();
+    for (let card of cards) {
+        if (config.cards[card.id]) continue;
+        let c = defaultCard(card.id);
+        console.log(c);
+        config.cards[card.id] = c;
+    }
+    updateConfig(config);
 };
