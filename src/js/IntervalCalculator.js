@@ -146,6 +146,40 @@ export const getNextInterval = (cardId, difficulty) => {
     }
 };
 
+export const sm2 = ({ repetitions, multiplier: prevMultiplier, interval: prevInterval }, difficulty) => {
+	let interval;
+	let multiplier;
+	let newRepetitions = repetitions + 1;
+	if (difficulty >= 3) {
+		switch (repetitions) {
+			case 0:
+				interval = ONE_DAY;
+				break;
+			case 1:
+				interval = 6 * ONE_DAY;
+				break;
+			default:
+				interval = prevInterval * prevMultiplier;
+				break;
+		}
+		multiplier = prevMultiplier + (0.1 - (5 - difficulty) * (0.08 + (5 - difficulty) * 0.02));
+	} else {
+		newRepetitions = 0;
+		interval = ONE_DAY;
+		multiplier = prevMultiplier;
+	}
+
+	if (multiplier < 1.3) {
+		multiplier = 1.3;
+	}
+
+	return {
+		repetitions: newRepetitions,
+		multiplier,
+		interval
+	};
+}
+
 const main = (arr) => {
     let interval = -1;
     let previousInterval = null;
