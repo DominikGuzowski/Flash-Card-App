@@ -80,6 +80,7 @@ export const getFolderNames = async () => {
         }
         pageToken = res.nextPageToken;
     } while (pageToken);
+    folders = folders.filter(({ name }) => name.startsWith("NoYou::"));
     return {
         data: folders,
     };
@@ -92,7 +93,7 @@ const getFilesInFolder = async (folderId) => {
         let res;
         try {
             res = await gapi.client.drive.files.list({
-                q: `parents = '${folderId}'`,
+                q: `parents = '${folderId}' and trashed=false`,
                 fields: "nextPageToken, files(id, name, mimeType)",
                 spaces: "drive",
                 pageToken: pageToken,
@@ -113,7 +114,7 @@ const getFilesInFolder = async (folderId) => {
     };
 };
 
-export const recursivelyGetFilesInFolder = async (folderId) => {
+const recursivelyGetFilesInFolder = async (folderId) => {
     let queue = [folderId];
     let files = [];
     while (queue.length > 0) {
@@ -132,18 +133,24 @@ export const recursivelyGetFilesInFolder = async (folderId) => {
             }
         }
     }
+    console.log(files);
     return {
         data: files,
     };
 };
 
-export const getFileContents = async (file) => {
+const getFileContents = async (file, type) => {
     try {
+        if (!type.includes("text")) {
+            return {
+                error: "currently inconpatible file type"
+            };
+        }
         const res = await gapi.client.drive.files.get({
             fileId: file,
             alt: "media",
         });
-
+        console.log(res);
         if (res.headers["Content-Type"].includes("text") /* === "plain/text"*/) {
             return {
                 data: res.body,
@@ -160,12 +167,19 @@ export const getFileContents = async (file) => {
     }
 };
 
-export const getAllFilesContents = async (folder) => {
-    const { data: files } = await recursivelyGetFilesInFolder(folder);
+// takes in { name: ---, id: --- }
+export const getAllNotes = async (folders) => {
+    let files = []
+    for (let folder of folders) {
+        const { error, data: tempFiles } = await recursivelyGetFilesInFolder(folder.id);
+        if (!error) {
+            files.push(...tempFiles);
+        }
+    }
     let retFiles = [];
     // let textArr = [];
     for (let i = 0; i < files.length; i++) {
-        const { data, error } = await getFileContents(files[i].id);
+        const { data, error } = await getFileContents(files[i].id, files[i].mimeType);
         if (error && error === "currently inconpatible file type") {
             continue;
         } else if (error) {
