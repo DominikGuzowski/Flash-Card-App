@@ -529,55 +529,6 @@ const jsonToFlashCard = (json) => {
     return flashCardString;
 };
 
-const simpleRegexMatch = (startSymbol, endSymbol, string, options = {}) => {
-    let { mustStartAt = null, mustEndAt = null, ignoreTrailingWhiteSpace = false } = options;
-    if (ignoreTrailingWhiteSpace) string = clearTrailingWhiteSpace(string);
-    const start = string.indexOf(startSymbol);
-    if (mustStartAt !== null && mustStartAt !== start) return null;
-    if (start === -1) return null;
-    const end = string.indexOf(endSymbol, start);
-    if (end === -1) return string.substring(start);
-    if (mustEndAt !== null && end !== string.length - 1 - mustEndAt + (endSymbol.length - 1)) return null;
-    return string.substring(start, end + endSymbol.length);
-};
-
-const matchMode = (line) => ({
-    bracketTopic: simpleRegexMatch("[", "]", line, {
-        mustEndAt: 0,
-        ignoreTrailingWhiteSpace: true,
-    }),
-    mdTopic1: simpleRegexMatch("# ", null, line, {
-        mustStartAt: 0,
-        mustEndAt: 0,
-        ignoreTrailingWhiteSpace: true,
-    }),
-    mdTopic2: simpleRegexMatch("## ", null, line, {
-        mustStartAt: 0,
-        mustEndAt: 0,
-        ignoreTrailingWhiteSpace: true,
-    }),
-    mdTopic3: simpleRegexMatch("### ", null, line, {
-        mustStartAt: 0,
-        mustEndAt: 0,
-        ignoreTrailingWhiteSpace: true,
-    }),
-    mdTopic4: simpleRegexMatch("#### ", null, line, {
-        mustStartAt: 0,
-        mustEndAt: 0,
-        ignoreTrailingWhiteSpace: true,
-    }),
-    mdTopic5: simpleRegexMatch("##### ", null, line, {
-        mustStartAt: 0,
-        mustEndAt: 0,
-        ignoreTrailingWhiteSpace: true,
-    }),
-    mdTopic6: simpleRegexMatch("###### ", null, line, {
-        mustStartAt: 0,
-        mustEndAt: 0,
-        ignoreTrailingWhiteSpace: true,
-    }),
-});
-
 const clearTrailingWhiteSpace = (string) => reverseString(clearLeadingWhiteSpace(reverseString(string)));
 
 const reverseString = (str) => str.split("").reverse().join("");
@@ -604,7 +555,7 @@ const treeify = (tree, set) => {
     root.__flashcards = set.cards;
 };
 const CARD_RGX =
-    /(?<=\s*#Q\s+)([\S\s]+?\s+#A\s+[\S\s]+?)((?=\s+#Q\s+)|(?=\s+#E\s+)|(?=\s*#{1,6}\s+))|((?<=\s*)#{1,6}\s+[\S \t]+?(?=\n))/g;
+    /(?<=\s*#Q\s+)([\S\s]+?\s+#A\s+[\S\s]+?)((?=\s+#Q\s+)|(?=\s+#E\s+)|(?=\s*$)|(?=\s*#{1,6}\s+))|(\B#{1,6}\s+[\S \t]+?(?=\n))/g;
 const HEADERS = /(?<=\s*)#{1,6}\s+[\S \t]+?(?=\n)/g;
 const HEADER_RGX = /^#{1,6}(?=\s+[\S \t]+$)/g;
 const PARENT = /::.*?(?=\n)/g;
@@ -614,7 +565,9 @@ const optimizedHashParser = (str) => {
     if (!parent) return [];
     parent = parent.replaceAll(/:{2}\s*/g, "");
     let res = [];
-    const matches = str.match(CARD_RGX);
+    const matches = str.replaceAll(/[ ]*\n/g, "\n").match(CARD_RGX);
+    console.log(matches);
+    if (!matches) return [];
     let current = {
         topic: "",
         cards: [],

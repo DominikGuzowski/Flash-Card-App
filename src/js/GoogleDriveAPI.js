@@ -1,4 +1,5 @@
 import { gapi } from "gapi-script";
+import { getAccessToken } from "./Gapi";
 
 export const uploadFile = (name, text, mimeType, parentId) => {
     let auth_token = getAccessToken();
@@ -52,33 +53,6 @@ export const uploadFile = (name, text, mimeType, parentId) => {
                 };
             }
         );
-};
-
-export const getAccessToken = () => {
-    return gapi.client.getToken().access_token;
-};
-
-export const getUser = () => {
-    try {
-        return {
-            data: {
-                email: gapi.auth2
-                    .getAuthInstance()
-                    .currentUser.get()
-                    .getBasicProfile()
-                    .getEmail(),
-                fullName: gapi.auth2
-                    .getAuthInstance()
-                    .currentUser.get()
-                    .getBasicProfile()
-                    .getName(),
-            },
-        };
-    } catch (error) {
-        return {
-            error: error.message,
-        };
-    }
 };
 
 export const getFolderNames = async () => {
